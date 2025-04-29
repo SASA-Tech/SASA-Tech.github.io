@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Registro Sabbiature</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      margin: 0;
+      padding: 1rem;
+      background-color: #f2f2f2;
+    }
+    h1 {
+      text-align: center;
+    }
+    .form-container {
+      background: white;
+      padding: 1rem;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      margin-bottom: 1rem;
+    }
+    .form-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.3rem;
+      margin-bottom: 0.3rem;
+    }
+    label {
+      display: flex;
+      align-items: center;
+      font-weight: bold;
+      font-size: 0.9rem;
+    }
+    input, select, button {
+      padding: 6px;
+      font-size: 0.95rem;
+      margin-left: 4px;
+    }
+    input[type="checkbox"] {
+      width: auto;
+      margin-left: 6px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.9rem;
+    }
+    th, td {
+      border: 1px solid #ccc;
+      padding: 6px;
+      text-align: center;
+    }
+    th {
+      background-color: #ddd;
+    }
+    .action-btn {
+      margin: 0 4px;
+      cursor: pointer;
+      color: blue;
+    }
+    .errore {
+      border: 2px solid red;
+    }
+    .buttons {
+      text-align: center;
+      margin-top: 1rem;
+    }
+  </style>
+</head>
+<body>
+  <h1>Registro Sabbiature</h1>
+  <div class="form-container">
+    <div class="form-group">
+      <label>Data:
+        <input type="date" id="data">
+      </label>
+      <label>ODL:
+        <input type="text" id="odl">
+      </label>
+      <label>EBM:
+        <select id="ebm" onchange="aggiornaRecupero()">
+          <option value="">-- seleziona --</option>
+          <option>3</option><option>4</option><option>5s</option><option>6</option>
+          <option>8</option><option>9</option><option>10s</option><option>12</option>
+          <option>13</option><option>14</option><option>15</option><option>16</option>
+          <option>18</option><option>21</option><option>22</option><option>23</option>
+          <option>24</option><option>25</option>
+        </select>
+      </label>
+      <label>Fase:
+        <input type="number" id="fase">
+      </label>
+      <label>Apertura:
+        <input type="time" id="apertura" onchange="calcolaChiusura()">
+        <input type="checkbox" id="checkApertura" title="Flag apertura">
+      </label>
+      <label>Durata (ore):
+        <input type="number" id="durata" step="0.01" onchange="calcolaChiusura()">
+      </label>
+      <label>Chiusura:
+        <input type="time" id="chiusura" readonly>
+        <input type="checkbox" id="checkChiusura" title="Flag chiusura">
+      </label>
+      <label>Recupero:
+        <select id="recupero">
+          <option value="">-- seleziona --</option>
+          <option>/</option>
+        </select>
+        <input type="checkbox" id="checkRecupero" title="Flag recupero">
+      </label>
+    </div>
+    <div class="buttons">
+      <button onclick="aggiungiRiga()">Aggiungi</button>
+      <button onclick="esportaCSV()">Esporta CSV</button>
+    </div>
+  </div>
+
+  <table id="tabella">
+    <thead>
+      <tr>
+        <th>Data</th>
+        <th>ODL</th>
+        <th>EBM</th>
+        <th>Fase</th>
+        <th>Apertura</th>
+        <th>✔</th>
+        <th>Durata</th>
+        <th>Chiusura</th>
+        <th>✔</th>
+        <th>Recupero</th>
+        <th>✔</th>
+        <th>Azioni</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <script>
+    function aggiornaRecupero() {
+      const ebm = document.getElementById('ebm').value;
+      const recupero = document.getElementById('recupero');
+      recupero.innerHTML = '<option value="">-- seleziona --</option><option>/</option>';
+      if (ebm === '21' || ebm === '15') {
+        recupero.innerHTML += '<option>Bidone</option>';
+      } else if (ebm === '3' || ebm === '4') {
+        recupero.innerHTML += '<option>Bidone (TiGR2)</option>';
+      } else if (["5s","6","8","9","10s","12","13","14","16","18","22","23","24","25"].includes(ebm)) {
+        ["Bidone", "Mini Bin", "Secchiello"].forEach(opt => {
+          const option = document.createElement('option');
+          option.text = opt;
+          recupero.add(option);
+        });
+      }
+    }
+
+    function calcolaChiusura() {
+      const apertura = document.getElementById('apertura').value;
+      const durata = parseFloat(document.getElementById('durata').value);
+      if (apertura && !isNaN(durata)) {
+        const [ore, minuti] = apertura.split(":").map(Number);
+        const totaleMinuti = ore * 60 + minuti + Math.round(durata * 60);
+        const nuoveOre = Math.floor(totaleMinuti / 60) % 24;
+        const nuoviMinuti = totaleMinuti % 60;
+        const chiusura = `${nuoveOre.toString().padStart(2, '0')}:${nuoviMinuti.toString().padStart(2, '0')}`;
+        document.getElementById('chiusura').value = chiusura;
+      }
+    }
+
+    function aggiungiRiga() {
+      const campi = ["data", "odl", "ebm", "fase", "apertura", "durata", "chiusura", "recupero"];
+      let validi = true;
+      campi.forEach(id => {
+        const el = document.getElementById(id);
+        if (!el.value) {
+          el.classList.add('errore');
+          validi = false;
+        } else {
+          el.classList.remove('errore');
+        }
+      });
+      if (!validi) {
+        alert("Completa tutti i campi obbligatori.");
+        return;
+      }
+
+      const data = document.getElementById('data').value;
+      const odl = document.getElementById('odl').value;
+      const ebm = document.getElementById('ebm').value;
+      const fase = document.getElementById('fase').value;
+      const apertura = document.getElementById('apertura').value;
+      const durata = document.getElementById('durata').value;
+      const chiusura = document.getElementById('chiusura').value;
+      const recupero = document.getElementById('recupero').value;
+
+      const checkApertura = document.getElementById('checkApertura').checked ? "✔" : "X";
+      const checkChiusura = document.getElementById('checkChiusura').checked ? "✔" : "X";
+      const checkRecupero = document.getElementById('checkRecupero').checked ? "✔" : "X";
+
+      const table = document.getElementById('tabella').querySelector('tbody');
+      const riga = table.insertRow();
+      [data, odl, ebm, fase, apertura, checkApertura, durata, chiusura, checkChiusura, recupero, checkRecupero].forEach(val => {
+        const cella = riga.insertCell();
+        cella.textContent = val;
+      });
+      const cellaAzioni = riga.insertCell();
+      cellaAzioni.innerHTML = '<span class="action-btn" onclick="modificaRiga(this)">✏️</span><span class="action-btn" onclick="cancellaRiga(this)">🗑️</span>';
+
+      document.querySelectorAll('input, select').forEach(el => {
+        if (el.type === 'checkbox') el.checked = false;
+        else el.value = '';
+      });
+
+      salvaDati();
+    }
+
+    function modificaRiga(span) {
+      const riga = span.closest('tr');
+      const celle = riga.querySelectorAll('td');
+      document.getElementById('data').value = celle[0].textContent;
+      document.getElementById('odl').value = celle[1].textContent;
+      document.getElementById('ebm').value = celle[2].textContent;
+      document.getElementById('fase').value = celle[3].textContent;
+      document.getElementById('apertura').value = celle[4].textContent;
+      document.getElementById('checkApertura').checked = celle[5].textContent === "✔";
+      document.getElementById('durata').value = celle[6].textContent;
+      document.getElementById('chiusura').value = celle[7].textContent;
+      document.getElementById('checkChiusura').checked = celle[8].textContent === "✔";
+      aggiornaRecupero();
+      document.getElementById('recupero').value = celle[9].textContent;
+      document.getElementById('checkRecupero').checked = celle[10].textContent === "✔";
+      riga.remove();
+      salvaDati();
+    }
+
+    function cancellaRiga(span) {
+      span.closest('tr').remove();
+      salvaDati();
+    }
+
+    function salvaDati() {
+      const dati = [];
+      document.querySelectorAll('#tabella tbody tr').forEach(riga => {
+        const celle = riga.querySelectorAll('td');
+        const record = Array.from(celle).slice(0, 11).map(td => td.textContent);
+        dati.push(record);
+      });
+      localStorage.setItem('registroSabbiature', JSON.stringify(dati));
+    }
+
+    function caricaDati() {
+      const dati = JSON.parse(localStorage.getItem('registroSabbiature') || '[]');
+      const table = document.getElementById('tabella').querySelector('tbody');
+      dati.forEach(record => {
+        const riga = table.insertRow();
+        record.forEach(val => {
+          const cella = riga.insertCell();
+          cella.textContent = val;
+        });
+        const cellaAzioni = riga.insertCell();
+        cellaAzioni.innerHTML = '<span class="action-btn" onclick="modificaRiga(this)">✏️</span><span class="action-btn" onclick="cancellaRiga(this)">🗑️</span>';
+      });
+    }
+
+    function esportaCSV() {
+      const righe = document.querySelectorAll("#tabella tr");
+      const csv = Array.from(righe).map(riga => {
+        return Array.from(riga.querySelectorAll("th, td"))
+          .map(cell => `"${cell.textContent}"`).join(",");
+      }).join("\n");
+
+      const blob = new Blob([csv], { type: "text/csv" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "registro_sabbiature.csv";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    }
+
+    window.onload = caricaDati;
+  </script>
+</body>
+</html>
