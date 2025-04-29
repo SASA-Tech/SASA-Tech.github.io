@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="it">
 <head>
@@ -110,6 +111,9 @@
         </select>
         <input type="checkbox" id="checkRecupero" title="Flag recupero">
       </label>
+      <label>Commenti:
+        <input type="text" id="commenti">
+      </label>
     </div>
     <div class="buttons">
       <button onclick="aggiungiRiga()">Aggiungi</button>
@@ -131,6 +135,7 @@
         <th>✔</th>
         <th>Recupero</th>
         <th>✔</th>
+        <th>Commenti</th>
         <th>Azioni</th>
       </tr>
     </thead>
@@ -169,7 +174,7 @@
     }
 
     function aggiungiRiga() {
-      const campi = ["data", "odl", "ebm", "fase", "apertura", "durata", "chiusura", "recupero"];
+      const campi = ["data", "odl", "ebm", "fase", "apertura", "durata", "chiusura", "recupero", "commenti"];
       let validi = true;
       campi.forEach(id => {
         const el = document.getElementById(id);
@@ -193,6 +198,7 @@
       const durata = document.getElementById('durata').value;
       const chiusura = document.getElementById('chiusura').value;
       const recupero = document.getElementById('recupero').value;
+      const commenti = document.getElementById('commenti').value;
 
       const checkApertura = document.getElementById('checkApertura').checked ? "✔" : "X";
       const checkChiusura = document.getElementById('checkChiusura').checked ? "✔" : "X";
@@ -200,7 +206,7 @@
 
       const table = document.getElementById('tabella').querySelector('tbody');
       const riga = table.insertRow();
-      [data, odl, ebm, fase, apertura, checkApertura, durata, chiusura, checkChiusura, recupero, checkRecupero].forEach(val => {
+      [data, odl, ebm, fase, apertura, checkApertura, durata, chiusura, checkChiusura, recupero, checkRecupero, commenti].forEach(val => {
         const cella = riga.insertCell();
         cella.textContent = val;
       });
@@ -230,6 +236,7 @@
       aggiornaRecupero();
       document.getElementById('recupero').value = celle[9].textContent;
       document.getElementById('checkRecupero').checked = celle[10].textContent === "✔";
+      document.getElementById('commenti').value = celle[11]?.textContent || '';
       riga.remove();
       salvaDati();
     }
@@ -243,7 +250,7 @@
       const dati = [];
       document.querySelectorAll('#tabella tbody tr').forEach(riga => {
         const celle = riga.querySelectorAll('td');
-        const record = Array.from(celle).slice(0, 11).map(td => td.textContent);
+        const record = Array.from(celle).slice(0, 12).map(td => td.textContent);
         dati.push(record);
       });
       localStorage.setItem('registroSabbiature', JSON.stringify(dati));
