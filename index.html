@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="it">
 <head>
@@ -118,6 +117,8 @@
     <div class="buttons">
       <button onclick="aggiungiRiga()">Aggiungi</button>
       <button onclick="esportaCSV()">Esporta CSV</button>
+      <input type="file" id="importCsvInput" accept=".csv" style="display:none" onchange="importaCSV(event)">
+      <button onclick="document.getElementById('importCsvInput').click()">Importa CSV</button>
     </div>
   </div>
 
@@ -285,6 +286,36 @@
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
+    }
+
+    function importaCSV(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const contenuto = e.target.result;
+        const righe = contenuto.trim().split('\n');
+        const dati = righe.slice(1).map(riga =>
+          riga.split(',').map(cell => cell.replace(/^"|"$/g, '').trim())
+        );
+
+        const tbody = document.querySelector("#tabella tbody");
+        tbody.innerHTML = '';
+
+        dati.forEach(celle => {
+          const riga = tbody.insertRow();
+          celle.forEach(val => {
+            const cella = riga.insertCell();
+            cella.textContent = val;
+          });
+          const cellaAzioni = riga.insertCell();
+          cellaAzioni.innerHTML = '<span class="action-btn" onclick="modificaRiga(this)">✏️</span><span class="action-btn" onclick="cancellaRiga(this)">🗑️</span>';
+        });
+
+        salvaDati();
+      };
+      reader.readAsText(file);
     }
 
     window.onload = caricaDati;
